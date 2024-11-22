@@ -1,0 +1,63 @@
+.Sidemenu{
+  padding: 1rem;
+    border-radius: 14px;
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+    min-width: 20rem;
+    width: 20rem;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    left: 0;
+}
+.Sidemenu .links{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.Sidemenu .list-body {
+  padding: 10px;
+  background-color: #fff;
+  border-left: 2px solid #007bff;
+}
+.Sidemenu .list-body ul{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.Sidemenu .angle-icon {
+  margin-left: auto;
+  font-size: 16px;
+  color: #899ABA;
+}
+
+.Sidemenu .menuList {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  text-decoration: none;
+  color: #899ABA;
+  background-color: var(--white);
+  width: 100%;
+  transition: background-color 0.3s;
+  border-radius: 10px;
+  gap: 10px;
+  font-size: 14px ;
+  font-weight: 600;
+}
+.Sidemenu .menuList .icon{
+  /* color: #5252527f; */
+  font-size: 1.2rem;
+}
+
+.Sidemenu .menuList:hover,
+.Sidemenu .menuList.active {
+  background-color: #8833FF;
+  color: #fff;
+}
+
+.Sidemenu .menuList:hover .angle-icon,
+.Sidemenu .menuList.active .angle-icon{
+  color: var(--white);
+}

@@ -1,0 +1,62 @@
+/* Container for the whole tree */
+.binary-tree-container {
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Styles for each tree node */
+  .tree-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+  }
+  
+  /* Style for the individual node box */
+  .node {
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #3b82f6, #9333ea);
+    color: #fff;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    position: relative;
+  }
+  
+  /* Connectors for the tree structure */
+  .connection {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  /* Vertical line between parent and children nodes */
+  .vertical-line {
+    width: 1px;
+    height: 20px;
+    background: #6c63ff;
+  }
+  
+  /* Horizontal lines on the left and right side of the parent node */
+  .horizontal-line {
+    width: 50px;
+    height: 1px;
+    background: #6c63ff;
+  }
+  
+  /* Flex container for left and right child nodes */
+  .tree-children {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  /* Add spacing between child nodes */
+  .tree-children .tree-node {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  

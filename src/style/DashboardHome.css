@@ -1,0 +1,59 @@
+.DashboardHome {
+  width: 100%;
+}
+.DashboardHome .top-container {
+  padding: 40px;
+  border-radius: 8px;
+  background: radial-gradient(#243f99, #131926);
+}
+.DashboardHome .top-container .inner-top {
+  display: flex;
+  justify-content: space-between;
+}
+.DashboardHome .top-container .inner-top span.title {
+  color: var(--white);
+  font-size: 40px;
+  font-weight: 700;
+}
+.DashboardHome .top-container .inner-top p {
+  width: 30%;
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 400;
+  font-family: var(--ff-Montserrat);
+}
+.DashboardHome .top-container .inner-top .register.button-main {
+    border-radius: 100px;
+    background-color: #3361FF;
+    color: var(--white);
+    padding: 30px 35px;
+    display: flex;
+    gap: 8px;
+}
+.DashboardHome .top-container .cards-wrapper{
+    width: 100%;
+    display: flex;
+    column-gap: 2%;
+    margin-top: 45px;
+}
+.DashboardHome .top-container .cards-wrapper .cardBox{
+    width: 24%;
+    padding: 25px 30px;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #FEDD43 35%, #FA7596 100%);
+    display: flex;
+    justify-content: space-between;
+    color: var(--white);
+}
+.DashboardHome .top-container .cards-wrapper .cardBox:nth-child(2){
+    background: linear-gradient(45deg, #07B196 35%, #8CC743 100%);
+}
+.DashboardHome .top-container .cards-wrapper .cardBox:nth-child(3){
+    background: linear-gradient(45deg, #f6888c 35%, #8CC743 100%);
+}
+.DashboardHome .top-container .cards-wrapper .cardBox:nth-child(4){
+    background: linear-gradient(45deg, #4AB0FE 35%, #03EFFE 100%);
+}
+.DashboardHome .top-container .cards-wrapper .cardBox .content{
+
+}

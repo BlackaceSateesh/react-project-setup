@@ -1,0 +1,10 @@
+.Dashboard{
+    background-color: #F7F8FA;
+    padding: 0 4%;
+    position: relative;
+}
+.Dashboard .dashboard-inner{
+    width: 100%;
+    padding: 2% 5%;
+    padding-right: 0;
+}
