@@ -1,3 +1,9 @@
+export const generateUserId = (prefix = "SSPI") => {
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // Generate a random string
+  const timestampPart = Date.now().toString(36).toUpperCase(); // Add a timestamp for uniqueness
+  return `${prefix}-${randomPart}-${timestampPart}`;
+};
+
 export const sumLeftSubtree = (node) => {
   if (!node) return 0;
 

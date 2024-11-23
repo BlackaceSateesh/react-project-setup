@@ -1,11 +1,8 @@
 import { useState } from "react";
-import { Form, Button } from "react-bootstrap";
-import {
-  emailValidator,
-  passwordValidator,
-} from "../../utils/inputValidator";
+import { Form, Button, Alert } from "react-bootstrap";
 import TextInput from "../inputFields/TextInput";
-import { loginUser } from "../../api/auth/auth";
+import { Link, useNavigate } from "react-router-dom"; // for navigation
+import { AuthRoutes } from "../../constants/Routes";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +12,8 @@ const LoginForm = () => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,8 +24,10 @@ const LoginForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    newErrors.email = emailValidator(formData.email);
-    newErrors.password = passwordValidator(formData.password);
+    if (!formData.email || !formData.email.includes("@"))
+      newErrors.email = "Invalid email.";
+    if (!formData.password || formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters.";
 
     setErrors(newErrors);
     return Object.values(newErrors).every((error) => error === "");
@@ -35,31 +36,52 @@ const LoginForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      const payload = { ...formData };
-      loginUserHandler(payload);
+      simulateLogin(formData);
     }
   };
 
-  const loginUserHandler = async (payload) => {
+  const simulateLogin = (credentials) => {
     setLoading(true);
-    console.log("Payload:", payload);
-    try {
-      await loginUser(payload); // Assume loginUser is an API call
-    } catch (error) {
-      console.error("Login Error:", error);
-      setErrors({ general: "Invalid email or password" });
-    } finally {
+    setTimeout(() => {
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+      const user = users.find(
+        (user) =>
+          user.email === credentials.email &&
+          user.password === credentials.password
+      );
+
+      if (user) {
+        // Generate a simple token (replace with actual token generation in production)
+        const token = `token-${new Date().getTime()}`;
+        localStorage.setItem("authToken", token); // Store the token
+        setNotification("Login successful!");
+        setTimeout(() => {
+          navigate("/"); // Redirect to dashboard after successful login
+          window.location.reload()
+        }, 1000);
+      } else {
+        setNotification("Invalid email or password.");
+      }
       setLoading(false);
-    }
+    }, 1000); // Simulate a delay
   };
 
   return (
     <Form onSubmit={handleSubmit} className="p-4 shadow rounded bg-light">
       <h2 className="text-center mb-4 text-[2rem]">Login</h2>
-      {loading && <span>Loading...</span>}
-      {errors.general && (
-        <div className="text-danger mb-3">{errors.general}</div>
+
+      {notification && (
+        <Alert
+          variant={notification === "Login successful!" ? "success" : "danger"}
+          onClose={() => setNotification("")}
+          dismissible
+        >
+          {notification}
+        </Alert>
       )}
+
+      {loading && <div className="text-center mb-3">Loading...</div>}
+
       <TextInput
         label="Email"
         type="email"
@@ -88,6 +110,7 @@ const LoginForm = () => {
       >
         Login
       </Button>
+      <Link to={AuthRoutes.REGISTER}>SignUp</Link>
     </Form>
   );
 };

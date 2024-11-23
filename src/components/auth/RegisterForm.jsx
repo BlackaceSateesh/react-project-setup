@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { Form, Button, Modal, Alert } from "react-bootstrap";
-import {
-  emailValidator,
-  mobileNumberValidator,
-  passwordValidator,
-} from "../../utils/inputValidator";
 import TextInput from "../inputFields/TextInput";
 import SelectInput from "../inputFields/SelectInput";
-import { createUser, verifyOtp } from "../../api/auth/auth"; // Assume `verifyOtp` exists
 import PageLoader from "../PageLoader";
+import { useNavigate } from "react-router-dom"; // for navigation
+import { generateUserId } from "../../utils/calculateFunc";
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -29,6 +25,8 @@ const RegisterForm = () => {
   const [notification, setNotification] = useState("");
   const [alertVariant, setAlertVariant] = useState("info"); // Alert variant
 
+  const navigate = useNavigate(); // To navigate after successful registration
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -38,13 +36,22 @@ const RegisterForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    newErrors.sponsoremail = emailValidator(formData.sponsoremail);
+    if (!formData.sponsoremail || !formData.sponsoremail.includes("@"))
+      newErrors.sponsoremail = "Sponsor email is invalid.";
     if (!formData.name) newErrors.name = "Name can't be empty.";
     if (!formData.country) newErrors.country = "Please select a country.";
-    newErrors.phone = mobileNumberValidator(formData.phone);
+    if (!formData.phone || formData.phone.length !== 10)
+      newErrors.phone = "Phone number must be 10 digits.";
     if (!formData.position) newErrors.position = "Please select a position.";
-    newErrors.email = emailValidator(formData.email);
-    newErrors.password = passwordValidator(formData.password);
+    if (!formData.email || !formData.email.includes("@"))
+      newErrors.email = "Email is invalid.";
+    if (
+      !formData.password ||
+      formData.password.length < 6 ||
+      !/[A-Z]/.test(formData.password)
+    )
+      newErrors.password =
+        "Password must be at least 6 characters long and include an uppercase letter.";
     if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match.";
 
@@ -52,56 +59,251 @@ const RegisterForm = () => {
     return Object.values(newErrors).every((error) => error === "");
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      const payload = { ...formData };
-      await createUserHandler(payload);
+      // Simulate OTP sending process
+      setNotification("OTP sent successfully.");
+      setAlertVariant("success");
+      setShowOtpModal(true);
     }
   };
-
-  const createUserHandler = async (payload) => {
-    setLoading(true);
-    setNotification("");
-    try {
-      const response = await createUser(payload);
-      if (response.success) {
-        setNotification("OTP sent successfully.");
-        setAlertVariant("success"); // Green alert for success
-        setShowOtpModal(true);
+  const addMemberToHierarchy = (currentMember, newMember, position) => {
+    // Ensure the `members` array exists for the current member
+    if (!currentMember.members) {
+      currentMember.members = [];
+    }
+  
+    const positionIndex = position === "left" ? 0 : 1;
+  
+    // If the position is empty, add the new member here
+    if (!currentMember.members[positionIndex]) {
+      currentMember.members[positionIndex] = {
+        ...newMember,
+        id: generateUserId(),
+        password: undefined, // Exclude sensitive info
+        confirmPassword: undefined,
+        members: [], // Initialize a new `members` array for this new user
+      };
+      return true; // Successfully added
+    }
+  
+    // If the position is occupied, recursively check the same position for this member
+    return addMemberToHierarchy(
+      currentMember.members[positionIndex],
+      newMember,
+      position
+    );
+  };
+  const handleOtpSubmit = () => {
+    if (otp === "1111") {
+      setNotification("Registration successful!");
+      setAlertVariant("success");
+  
+      // Retrieve users from localStorage
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+  
+      // Function to recursively check for sponsor in the hierarchy
+      const findSponsorInHierarchy = (users, sponsoremail) => {
+        for (let user of users) {
+          if (!user) continue; // Skip if user is null or undefined
+          
+          // Check if the current user's email matches the sponsoremail
+          if (user.email === sponsoremail) {
+            return user; // Sponsor found
+          }
+      
+          // If this user has members, recursively check their members
+          if (user.members && user.members.length > 0) {
+            const sponsorInMembers = findSponsorInHierarchy(user.members, sponsoremail);
+            if (sponsorInMembers) {
+              return sponsorInMembers; // Sponsor found within the members
+            }
+          }
+        }
+        return null; // Sponsor not found in this user's hierarchy
+      };
+      
+  
+      // Find sponsor in the users list or their nested members
+      const sponsor = findSponsorInHierarchy(users, formData.sponsoremail);
+  
+      if (sponsor) {
+        // Check the chosen position (left or right) and attempt to add the user
+        const position = formData.position; // Assume `position` is provided as "left" or "right"
+        const addedToPosition = addMemberToHierarchy(sponsor, formData, position);
+  
+        if (!addedToPosition) {
+          setNotification(
+            `No available ${position} position in sponsor hierarchy.`
+          );
+          setAlertVariant("danger");
+          setShowOtpModal(false);
+          return;
+        }
+  
+        // Save updated users back to localStorage
+        localStorage.setItem("users", JSON.stringify(users));
+        setNotification(
+          `User added under sponsor successfully in the ${position} position!`
+        );
       } else {
-        setNotification("Failed to send OTP. Try again.");
-        setAlertVariant("danger"); // Red alert for failure
-      }
-    } catch (error) {
-      console.error(error);
-      setNotification("An error occurred. Please try again.");
-      setAlertVariant("danger"); // Red alert for errors
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOtpSubmit = async () => {
-    setLoading(true);
-    try {
-      const response = await verifyOtp({ email: formData.email, otp });
-      if (response.success) {
-        setNotification("Registration successful!");
-        setAlertVariant("success"); // Green alert for success
+        setNotification("Sponsor email does not exist.");
+        setAlertVariant("danger");
         setShowOtpModal(false);
-      } else {
-        setNotification("OTP does not match. Please try again.");
-        setAlertVariant("danger"); // Red alert for failure
+        return;
       }
-    } catch (error) {
-      console.error(error);
-      setNotification("An error occurred while verifying OTP.");
-      setAlertVariant("danger"); // Red alert for errors
-    } finally {
-      setLoading(false);
+  
+      // Redirect to login page
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+      setShowOtpModal(false);
+    } else {
+      setNotification("OTP does not match. Please try again.");
+      setAlertVariant("danger");
     }
   };
+  
+  
+  // const handleOtpSubmit = () => {
+  //   if (otp === "1111") {
+  //     setNotification("Registration successful!");
+  //     setAlertVariant("success");
+  
+  //     // Retrieve users from localStorage
+  //     const users = JSON.parse(localStorage.getItem("users")) || [];
+  //     const sponsorIndex = users.findIndex(
+  //       (user) =>
+  //         user.email === formData.sponsoremail ||
+  //         user?.members?.some((mem) => mem.email === formData.sponsoremail)
+  //     );
+  
+  //     if (sponsorIndex !== -1) {
+  //       // Identify whether the sponsor is a direct user or a member
+  //       let sponsor = users[sponsorIndex];
+  
+  //       if (sponsor.email !== formData.sponsoremail) {
+  //         // If not a direct match, find the member within this user's members
+  //         sponsor = sponsor.members.find(
+  //           (mem) => mem.email === formData.sponsoremail
+  //         );
+  //       }
+  
+  //       if (sponsor) {
+  //         // Check the chosen position (left or right) and attempt to add the user
+  //         const position = formData.position; // Assume `position` is provided as "left" or "right"
+  //         const addedToPosition = addMemberToHierarchy(
+  //           sponsor,
+  //           formData,
+  //           position
+  //         );
+  
+  //         if (!addedToPosition) {
+  //           setNotification(
+  //             `No available ${position} position in sponsor hierarchy.`
+  //           );
+  //           setAlertVariant("danger");
+  //           setShowOtpModal(false);
+  //           return;
+  //         }
+  
+  //         // Save updated users back to localStorage
+  //         localStorage.setItem("users", JSON.stringify(users));
+  //         setNotification(
+  //           `User added under sponsor successfully in the ${position} position!`
+  //         );
+  //       } else {
+  //         setNotification("Sponsor email does not exist.");
+  //         setAlertVariant("danger");
+  //         setShowOtpModal(false);
+  //         return;
+  //       }
+  
+  //       // Redirect to login page
+  //       setTimeout(() => {
+  //         navigate("/");
+  //       }, 1000);
+  //       setShowOtpModal(false);
+  //     } else {
+  //       setNotification("Sponsor email does not exist.");
+  //       setAlertVariant("danger");
+  //     }
+  //   } else {
+  //     setNotification("OTP does not match. Please try again.");
+  //     setAlertVariant("danger");
+  //   }
+  // };
+  
+  
+
+  // const handleOtpSubmit = () => {
+  //   if (otp === "1111") {
+  //     // Default OTP check: 1111
+  //     setNotification("Registration successful!");
+  //     setAlertVariant("success");
+
+  //     // Retrieve users from localStorage, or initialize an empty array if not present
+  //     const users = JSON.parse(localStorage.getItem("users")) || [];
+  //     const sponsorIndex = users.findIndex(
+  //       (user) =>
+  //         user.email === formData.sponsoremail ||
+  //         user?.members?.map((mem) => mem.email === formData.sponsoremail)
+  //     );
+
+  //     if (sponsorIndex !== -1) {
+  //       // Check if sponsorEmail matches a direct user's email
+  //       if (users[sponsorIndex].email === formData.sponsoremail) {
+  //         // Add new user to this sponsor's members
+  //         if (!users[sponsorIndex].members) {
+  //           users[sponsorIndex].members = []; // Initialize members array if not present
+  //         }
+  //         users[sponsorIndex].members.push({
+  //           ...formData,
+  //           password: undefined, // Exclude sensitive info from members
+  //           confirmPassword: undefined,
+  //         });
+  //       } else {
+  //         // If not a direct match, find the member within this user's members list
+  //         const member = users[sponsorIndex].members.find(
+  //           (mem) => mem.email === formData.sponsoremail
+  //         );
+      
+  //         if (member) {
+  //           // Add new user under this member's members
+  //           if (!member.members) {
+  //             member.members = []; // Initialize members array if not present
+  //           }
+  //           member.members.push({
+  //             ...formData,
+  //             password: undefined, // Exclude sensitive info from members
+  //             confirmPassword: undefined,
+  //           });
+  //         }
+  //       }
+      
+  //       // Update localStorage with modified users array
+  //       localStorage.setItem("users", JSON.stringify(users));
+  //       setNotification("User added under sponsor successfully!");
+  //     } else {
+  //       // Sponsor email does not exist
+  //       setNotification("Sponsor email does not exist.");
+  //       setAlertVariant("danger");
+  //       setShowOtpModal(false);
+  //       return;
+  //     }
+      
+
+  //     // Redirect to login page
+  //     setTimeout(() => {
+  //       navigate("/");
+  //     }, 1000);
+  //     setShowOtpModal(false);
+  //   } else {
+  //     setNotification("OTP does not match. Please try again.");
+  //     setAlertVariant("danger");
+  //   }
+  // };
 
   return (
     <>
@@ -163,8 +365,6 @@ const RegisterForm = () => {
           value={formData.phone}
           onChange={handleChange}
           name="phone"
-          min={10}
-          max={10}
           error={errors.phone}
         />
 
@@ -217,7 +417,7 @@ const RegisterForm = () => {
       {/* OTP Modal */}
       <Modal show={showOtpModal} onHide={() => setShowOtpModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Enter OTP</Modal.Title>
+          <Modal.Title>Enter OTP ---- 1111</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <TextInput
